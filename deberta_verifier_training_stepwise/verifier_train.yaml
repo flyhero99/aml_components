@@ -1,6 +1,6 @@
 name: Verifier_Train
 display_name: Verifier Train
-version: 1
+version: 0.0.1
 type: command
 description: Verifier Train
 tags: {category: Verifier Training, contact: v-yifeili@microsoft.com}
@@ -67,7 +67,7 @@ inputs:
     description: default is 2
     default: 2
 outputs:
-  model_output:
+  model_output_dir:
     type: path
 code:
   local_path: ./train_src
@@ -97,7 +97,7 @@ command: >-
   --task_type NER
   --data_dir ${{inputs.training_data_dir}}
   --labels ${{inputs.training_data_labels_dir}}
-  --model_name_or_path ${{model_name_or_path}}
+  --model_name_or_path ${{inputs.model_name_or_path}}
   --output_dir ${{outputs.model_output_dir}}
   --max_seq_length 512
   --per_device_train_batch_size 8
