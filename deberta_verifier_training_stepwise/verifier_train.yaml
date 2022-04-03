@@ -67,8 +67,10 @@ inputs:
     description: default is 2
     default: 2
 outputs:
-  model_output_dir:
+  output_dir:
     type: path
+    optional: false
+    description: The path of the output
 code:
   local_path: ./train_src
 environment:
@@ -113,7 +115,7 @@ command: >-
   --data_dir ${{inputs.training_data_dir}}
   --labels ${{inputs.training_data_labels_dir}}
   --model_name_or_path ${{inputs.model_name_or_path}}
-  --output_dir ${{outputs.model_output_dir}}
+  --output_dir ${{outputs.output_dir}}
   --max_seq_length 512
   --per_device_train_batch_size 8
   --per_device_eval_batch_size 64

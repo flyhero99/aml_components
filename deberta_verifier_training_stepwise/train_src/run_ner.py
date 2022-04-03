@@ -24,6 +24,8 @@ import pdb
 import numpy as np
 from seqeval.metrics import accuracy_score, f1_score, precision_score, recall_score
 from torch import nn
+import scipy
+from gsm8k_verifier_metrics import GSM8KVerifierMetrics
 
 import transformers
 from transformers import (
@@ -39,6 +41,7 @@ from transformers import (
 )
 from transformers.trainer_utils import is_main_process
 from utils_ner import Split, TokenClassificationDataset, TokenClassificationTask
+import datasets
 from deberta_model import DebertaV2ForTokenClassification
 import pdb
 
@@ -102,10 +105,10 @@ class DataTrainingArguments:
         default=1.0, metadata={"help": "help"}
     )
     step_correct_loss_weight: Optional[float] = field(
-        default=1.0, metadata={"help": "help"}
+        default=0.1, metadata={"help": "help"}
     )
     step_incorrect_loss_weight: Optional[float] = field(
-        default=1.0, metadata={"help": "help"}
+        default=0.1, metadata={"help": "help"}
     )
     other_label_loss_weight: Optional[float] = field(
         default=1.0, metadata={"help": "help"}
@@ -181,8 +184,6 @@ def main():
     label_map: Dict[int, str] = {i: label for i, label in enumerate(labels)}
     num_labels = len(labels)
 
-    # pdb.set_trace()
-
     # Load pretrained model and tokenizer
     #
     # Distributed training:
@@ -249,8 +250,10 @@ def main():
         else None
     )
 
+    # save the texual sequences of eval dataset
+    eval_sequences = [tokenizer.decode(x.input_ids) for x in eval_dataset]
+
     def align_predictions(predictions: np.ndarray, label_ids: np.ndarray) -> Tuple[List[int], List[int]]:
-        # pdb.set_trace()
         preds = np.argmax(predictions, axis=2)
 
         batch_size, seq_len = preds.shape
@@ -264,17 +267,29 @@ def main():
                 # if label_ids[i, j] != nn.CrossEntropyLoss().ignore_index:
                     out_label_list[i].append(label_map[label_ids[i][j]])
                     preds_list[i].append(label_map[preds[i][j]])
-
         return preds_list, out_label_list
 
+    def get_solution_logits(predictions: np.ndarray):
+        scores = []
+        for i in range(predictions.shape[0]):
+            solution_correct_index = config.label2id["SOLUTION-CORRECT"]
+            score = scipy.special.softmax(predictions[i][1])[solution_correct_index].item()
+            scores.append(score)
+        return scores
+
+    # gsm8k_metric = datasets.load_metric("./gsm8k_verifier_metrics")
+    gsm8k_metric = GSM8KVerifierMetrics(eval_sequences=eval_sequences, label2id=config.label2id)
+
     def compute_metrics(p: EvalPrediction) -> Dict:
-        preds_list, out_label_list = align_predictions(p.predictions, p.label_ids)
-        return {
-            "accuracy_score": accuracy_score(out_label_list, preds_list),
-            "precision": precision_score(out_label_list, preds_list),
-            "recall": recall_score(out_label_list, preds_list),
-            "f1": f1_score(out_label_list, preds_list),
-        }
+        scores = get_solution_logits(p.predictions)
+        return gsm8k_metric.compute(predictions=scores, references=scores)
+        # preds_list, out_label_list = align_predictions(p.predictions, p.label_ids)
+        # return {
+        #     "accuracy_score": accuracy_score(out_label_list, preds_list),
+        #     "precision": precision_score(out_label_list, preds_list),
+        #     "recall": recall_score(out_label_list, preds_list),
+        #     "f1": f1_score(out_label_list, preds_list),
+        # }
 
     # Data collator
     data_collator = DataCollatorWithPadding(tokenizer, pad_to_multiple_of=8) if training_args.fp16 else None
@@ -291,47 +306,55 @@ def main():
 
     # Training
     if training_args.do_train:
-        # stage 1: Train with both solution-wise label and step-wise label
-        if data_args.num_of_multi_task_solution_wise_and_stepwise_both_train_epochs > 0:
-            trainer.args.output_dir = os.path.join(trainer.args.output_dir, "both_labels")
-            trainer.args.num_train_epochs = data_args.num_of_multi_task_solution_wise_and_stepwise_both_train_epochs
-            trainer.train(
-                model_path=model_args.model_name_or_path if os.path.isdir(model_args.model_name_or_path) else None
-            )
-            trainer.save_model()
-            # For convenience, we also re-save the tokenizer to the same directory,
-            # so that you can share your model easily on huggingface.co/models =)
-            if trainer.is_world_process_zero():
-                tokenizer.save_pretrained(training_args.output_dir)
+        trainer.train(
+            model_path=model_args.model_name_or_path if os.path.isdir(model_args.model_name_or_path) else None
+        )
+        trainer.save_model()
+        # For convenience, we also re-save the tokenizer to the same directory,
+        # so that you can share your model easily on huggingface.co/models =)
+        if trainer.is_world_process_zero():
+            tokenizer.save_pretrained(training_args.output_dir)
+
+        # # stage 1: Train with both solution-wise label and step-wise label
+        # if data_args.num_of_multi_task_solution_wise_and_stepwise_both_train_epochs > 0:
+        #     trainer.args.output_dir = os.path.join(trainer.args.output_dir, "both_labels")
+        #     trainer.args.num_train_epochs = data_args.num_of_multi_task_solution_wise_and_stepwise_both_train_epochs
+        #     trainer.train(
+        #         model_path=model_args.model_name_or_path if os.path.isdir(model_args.model_name_or_path) else None
+        #     )
+        #     trainer.save_model()
+        #     # For convenience, we also re-save the tokenizer to the same directory,
+        #     # so that you can share your model easily on huggingface.co/models =)
+        #     if trainer.is_world_process_zero():
+        #         tokenizer.save_pretrained(training_args.output_dir)
         
-        # stage 2: Train with solution-wise label only
-        if data_args.num_of_solution_wise_only_train_epochs > 0:
-            config.task_specific_params["solution_correct_loss_weight"] = 1.0
-            config.task_specific_params["solution_incorrect_loss_weight"] = 1.0
-            config.task_specific_params["step_correct_loss_weight"] = 1.0
-            config.task_specific_params["step_incorrect_loss_weight"] = 1.0
-            config.task_specific_params["other_label_loss_weight"] = 1.0
+        # # stage 2: Train with solution-wise label only
+        # if data_args.num_of_solution_wise_only_train_epochs > 0:
+        #     config.task_specific_params["solution_correct_loss_weight"] = 1.0
+        #     config.task_specific_params["solution_incorrect_loss_weight"] = 1.0
+        #     config.task_specific_params["step_correct_loss_weight"] = 1.0
+        #     config.task_specific_params["step_incorrect_loss_weight"] = 1.0
+        #     config.task_specific_params["other_label_loss_weight"] = 1.0
 
-            if data_args.num_of_multi_task_solution_wise_and_stepwise_both_train_epochs == 0:
-                trainer.args.output_dir = os.path.join(trainer.args.output_dir, "both_labels")
+        #     if data_args.num_of_multi_task_solution_wise_and_stepwise_both_train_epochs == 0:
+        #         trainer.args.output_dir = os.path.join(trainer.args.output_dir, "both_labels")
 
-            if len(os.listdir(trainer.args.output_dir)) > 0:
-                ckpt_num_list = sorted([int(dir.split("-")[-1]) for dir in os.listdir(trainer.args.output_dir) if dir.startswith("checkpoint")], reverse=True)
-                trainer.args.num_train_epochs = data_args.num_of_solution_wise_only_train_epochs + len(ckpt_num_list)
-                # pdb.set_trace()
-                if len(ckpt_num_list) > 0:
-                    last_ckpt_dir = os.path.join(trainer.args.output_dir, f"checkpoint-{ckpt_num_list[0]}")
-                    continue_model_path = last_ckpt_dir
-                    new_model = DebertaV2ForTokenClassification.from_pretrained(
-                        continue_model_path,
-                        from_tf=bool(".ckpt" in model_args.model_name_or_path),
-                        config=config,
-                        cache_dir=model_args.cache_dir,
-                    ).to("cuda")
-                    trainer.args.output_dir = os.path.join(trainer.args.output_dir, "..", "solution_wise_label_only")
-                    trainer.model = new_model
-                    trainer.train(model_path=continue_model_path)
-                    trainer.save_model()
+        #     if len(os.listdir(trainer.args.output_dir)) > 0:
+        #         ckpt_num_list = sorted([int(dir.split("-")[-1]) for dir in os.listdir(trainer.args.output_dir) if dir.startswith("checkpoint")], reverse=True)
+        #         trainer.args.num_train_epochs = data_args.num_of_solution_wise_only_train_epochs + len(ckpt_num_list)
+        #         if len(ckpt_num_list) > 0:
+        #             last_ckpt_dir = os.path.join(trainer.args.output_dir, f"checkpoint-{ckpt_num_list[0]}")
+        #             continue_model_path = last_ckpt_dir
+        #             new_model = DebertaV2ForTokenClassification.from_pretrained(
+        #                 continue_model_path,
+        #                 from_tf=bool(".ckpt" in model_args.model_name_or_path),
+        #                 config=config,
+        #                 cache_dir=model_args.cache_dir,
+        #             ).to("cuda")
+        #             trainer.args.output_dir = os.path.join(trainer.args.output_dir, "..", "solution_wise_label_only")
+        #             trainer.model = new_model
+        #             trainer.train(model_path=continue_model_path)
+        #             trainer.save_model()
                 
     # Evaluation
     results = {}
@@ -364,11 +387,7 @@ def main():
         )
 
         predictions, label_ids, metrics = trainer.predict(test_dataset)
-        # pdb.set_trace()
         preds_list, _ = align_predictions(predictions, label_ids)
-
-        # print("pred:", preds_list)
-        # pdb.set_trace()
 
         output_test_results_file = os.path.join(training_args.output_dir, "test_results.txt")
         if trainer.is_world_process_zero():
