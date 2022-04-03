@@ -14,9 +14,27 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """ Fine-tuning the library models for named entity recognition on CoNLL-2003. """
+import sys
+import subprocess
+subprocess.check_call([sys.executable, "-m", "pip", "install", "wandb==0.12.7"])
+subprocess.check_call([sys.executable, "-m", "pip", "install", "future"])
+subprocess.check_call([sys.executable, "-m", "pip", "install", "numpy==1.20.3"])
+subprocess.check_call([sys.executable, "-m", "pip", "install", "transformers==4.6.0"])
+subprocess.check_call([sys.executable, "-m", "pip", "install", "datasets==1.11.0"])
+subprocess.check_call([sys.executable, "-m", "pip", "install", "huggingface-hub==0.0.8"])
+subprocess.check_call([sys.executable, "-m", "pip", "install", "nltk"])
+subprocess.check_call([sys.executable, "-m", "pip", "install", "rouge-score"])
+subprocess.check_call([sys.executable, "-m", "pip", "install", "sacrebleu==1.5.1"])
+subprocess.check_call([sys.executable, "-m", "pip", "install", "sentencepiece"])
+subprocess.check_call([sys.executable, "-m", "pip", "install", "sklearn"])
+subprocess.check_call([sys.executable, "-m", "pip", "install", "deepspeed"])
+subprocess.check_call([sys.executable, "-m", "pip", "install", "seqeval"])
+subprocess.check_call([sys.executable, "-m", "pip", "install", "conllu"])
+subprocess.check_call([sys.executable, "-m", "pip", "install", "multiset"])
+
+
 import logging
 import os
-import sys
 from dataclasses import dataclass, field
 from importlib import import_module
 from typing import Dict, List, Optional, Tuple
