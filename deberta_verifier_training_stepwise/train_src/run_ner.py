@@ -252,6 +252,11 @@ def main():
 
     # save the texual sequences of eval dataset
     eval_sequences = [tokenizer.decode(x.input_ids) for x in eval_dataset]
+    for seq in eval_sequences:
+        if " && " not in seq:
+            print(seq)
+            break
+        
 
     def align_predictions(predictions: np.ndarray, label_ids: np.ndarray) -> Tuple[List[int], List[int]]:
         preds = np.argmax(predictions, axis=2)

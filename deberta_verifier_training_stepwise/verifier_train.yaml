@@ -58,14 +58,10 @@ inputs:
     type: number
     description: default 0.1
     default: 0.1
-  num_of_multi_task_solution_wise_and_stepwise_both_train_epochs:
+  num_train_epochs:
     type: integer
-    description: default is 2
-    default: 2
-  num_of_solution_wise_only_train_epochs:
-    type: integer
-    description: default is 2
-    default: 2
+    description: default is 5
+    default: 5
 outputs:
   output_dir:
     type: path
@@ -125,11 +121,10 @@ command: >-
   --seed ${{inputs.seed}}
   --do_train ${{inputs.do_train}}
   --do_eval ${{inputs.do_eval}}
+  --num_train_epochs ${{inputs.num_train_epochs}}
   --logging_steps 10
   --overwrite_output_dir
   --solution_correct_loss_weight ${{inputs.solution_correct_loss_weight}}
   --solution_incorrect_loss_weight ${{inputs.solution_incorrect_loss_weight}}
   --step_correct_loss_weight ${{inputs.step_correct_loss_weight}}
   --step_incorrect_loss_weight ${{inputs.step_incorrect_loss_weight}}
-  --num_of_multi_task_solution_wise_and_stepwise_both_train_epochs ${{inputs.num_of_multi_task_solution_wise_and_stepwise_both_train_epochs}}
-  --num_of_solution_wise_only_train_epochs ${{inputs.num_of_solution_wise_only_train_epochs}}
