@@ -1,6 +1,6 @@
 name: Verifier_Train
 display_name: Verifier Train
-version: 0.0.5
+version: 0.0.8
 type: command
 description: Verifier Train
 tags: {category: Verifier Training, contact: v-yifeili@microsoft.com}
@@ -81,9 +81,10 @@ successful_return_code: Zero
 meta:
   requireGpu: True
 command: >-
-  python -m torch.distributed.launch run_ner.py
+  pip install -r requirements.txt && python -m torch.distributed.launch
   --master_port 29501
   --nproc_per_node 8
+  run_ner.py
   --task_type NER
   --train_data ${{inputs.train_data}}
   --test_data ${{inputs.test_data}}
