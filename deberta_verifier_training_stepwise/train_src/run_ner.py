@@ -53,9 +53,11 @@ class ModelArguments:
     """
     Arguments pertaining to which model/config/tokenizer we are going to fine-tune from.
     """
-
     model_name_or_path: str = field(
         metadata={"help": "Path to pretrained model or model identifier from huggingface.co/models"}
+    )
+    previous_run_dir: Optional[str] = field(
+        default=None, metadata={"help": "Path to pretrained model or model identifier from huggingface.co/models"}
     )
     config_name: Optional[str] = field(
         default=None, metadata={"help": "Pretrained config name or path if not the same as model_name"}
@@ -80,11 +82,13 @@ class DataTrainingArguments:
     """
     Arguments pertaining to what data we are going to input our model for training and eval.
     """
-
-    data_dir: str = field(
-        metadata={"help": "The input data dir. Should contain the .txt files for a CoNLL-2003-formatted task."}
+    train_data: str = field(
+        metadata={"help": "Path to pretrained model or model identifier from huggingface.co/models"}
     )
-    labels: Optional[str] = field(
+    test_data: str = field(
+        metadata={"help": "Path to pretrained model or model identifier from huggingface.co/models"}
+    )
+    data_labels: Optional[str] = field(
         default=None,
         metadata={"help": "Path to a file containing all labels. If not specified, CoNLL-2003 labels are used."},
     )
@@ -180,7 +184,7 @@ def main():
     set_seed(training_args.seed)
 
     # Prepare CONLL-2003 task
-    labels = token_classification_task.get_labels(data_args.labels)
+    labels = token_classification_task.get_labels(data_args.data_labels)
     label_map: Dict[int, str] = {i: label for i, label in enumerate(labels)}
     num_labels = len(labels)
 
@@ -189,6 +193,9 @@ def main():
     # Distributed training:
     # The .from_pretrained methods guarantee that only one local process can concurrently
     # download model & vocab.
+
+    if model_args.previous_run_dir is not None:
+        model_args.model_name_or_path = model_args.previous_run_dir
 
     config = AutoConfig.from_pretrained(
         model_args.config_name if model_args.config_name else model_args.model_name_or_path,
@@ -220,11 +227,13 @@ def main():
         cache_dir=model_args.cache_dir,
     )
 
+    data_dir = data_args.train_data.replace("train.txt", "")
+
     # Get datasets
     train_dataset = (
         TokenClassificationDataset(
             token_classification_task=token_classification_task,
-            data_dir=data_args.data_dir,
+            data_dir=data_dir,
             tokenizer=tokenizer,
             labels=labels,
             model_type=config.model_type,
@@ -238,7 +247,7 @@ def main():
     eval_dataset = (
         TokenClassificationDataset(
             token_classification_task=token_classification_task,
-            data_dir=data_args.data_dir,
+            data_dir=data_dir,
             tokenizer=tokenizer,
             labels=labels,
             model_type=config.model_type,
@@ -252,11 +261,6 @@ def main():
 
     # save the texual sequences of eval dataset
     eval_sequences = [tokenizer.decode(x.input_ids) for x in eval_dataset]
-    for seq in eval_sequences:
-        if " && " not in seq:
-            print(seq)
-            break
-        
 
     def align_predictions(predictions: np.ndarray, label_ids: np.ndarray) -> Tuple[List[int], List[int]]:
         preds = np.argmax(predictions, axis=2)
@@ -382,7 +386,7 @@ def main():
     if training_args.do_predict:
         test_dataset = TokenClassificationDataset(
             token_classification_task=token_classification_task,
-            data_dir=data_args.data_dir,
+            data_dir=data_dir,
             tokenizer=tokenizer,
             labels=labels,
             model_type=config.model_type,
@@ -405,7 +409,7 @@ def main():
         output_test_predictions_file = os.path.join(training_args.output_dir, "test_predictions.txt")
         if trainer.is_world_process_zero():
             with open(output_test_predictions_file, "w") as writer:
-                with open(os.path.join(data_args.data_dir, "test.txt"), "r") as f:
+                with open(os.path.join(data_dir, "test.txt"), "r") as f:
                     token_classification_task.write_predictions_to_file(writer, f, preds_list)
 
     return results
