@@ -16,21 +16,21 @@
 """ Fine-tuning the library models for named entity recognition on CoNLL-2003. """
 import sys
 import subprocess
-subprocess.check_call([sys.executable, "-m", "pip", "install", "wandb==0.12.7"])
-subprocess.check_call([sys.executable, "-m", "pip", "install", "future"])
-subprocess.check_call([sys.executable, "-m", "pip", "install", "numpy==1.20.3"])
-subprocess.check_call([sys.executable, "-m", "pip", "install", "transformers==4.6.0"])
-subprocess.check_call([sys.executable, "-m", "pip", "install", "datasets==1.11.0"])
-subprocess.check_call([sys.executable, "-m", "pip", "install", "huggingface-hub==0.0.8"])
-subprocess.check_call([sys.executable, "-m", "pip", "install", "nltk"])
-subprocess.check_call([sys.executable, "-m", "pip", "install", "rouge-score"])
-subprocess.check_call([sys.executable, "-m", "pip", "install", "sacrebleu==1.5.1"])
-subprocess.check_call([sys.executable, "-m", "pip", "install", "sentencepiece"])
-subprocess.check_call([sys.executable, "-m", "pip", "install", "sklearn"])
-subprocess.check_call([sys.executable, "-m", "pip", "install", "deepspeed"])
-subprocess.check_call([sys.executable, "-m", "pip", "install", "seqeval"])
-subprocess.check_call([sys.executable, "-m", "pip", "install", "conllu"])
-subprocess.check_call([sys.executable, "-m", "pip", "install", "multiset"])
+# subprocess.check_call([sys.executable, "-m", "pip", "install", "wandb==0.12.7"])
+# subprocess.check_call([sys.executable, "-m", "pip", "install", "future"])
+# subprocess.check_call([sys.executable, "-m", "pip", "install", "numpy==1.20.3"])
+# subprocess.check_call([sys.executable, "-m", "pip", "install", "transformers==4.6.0"])
+# subprocess.check_call([sys.executable, "-m", "pip", "install", "datasets==1.11.0"])
+# subprocess.check_call([sys.executable, "-m", "pip", "install", "huggingface-hub==0.0.8"])
+# subprocess.check_call([sys.executable, "-m", "pip", "install", "nltk"])
+# subprocess.check_call([sys.executable, "-m", "pip", "install", "rouge-score"])
+# subprocess.check_call([sys.executable, "-m", "pip", "install", "sacrebleu==1.5.1"])
+# subprocess.check_call([sys.executable, "-m", "pip", "install", "sentencepiece"])
+# subprocess.check_call([sys.executable, "-m", "pip", "install", "sklearn"])
+# subprocess.check_call([sys.executable, "-m", "pip", "install", "deepspeed"])
+# subprocess.check_call([sys.executable, "-m", "pip", "install", "seqeval"])
+# subprocess.check_call([sys.executable, "-m", "pip", "install", "conllu"])
+# subprocess.check_call([sys.executable, "-m", "pip", "install", "multiset"])
 
 
 import logging
@@ -44,6 +44,7 @@ from seqeval.metrics import accuracy_score, f1_score, precision_score, recall_sc
 from torch import nn
 import scipy
 from gsm8k_verifier_metrics import GSM8KVerifierMetrics
+import shutil
 
 import transformers
 from transformers import (
@@ -244,8 +245,17 @@ def main():
         config=config,
         cache_dir=model_args.cache_dir,
     )
+    
+    data_dir = os.path.join(training_args.output_dir, "data/")
+    print("[data_dir]:", data_dir)
+    os.system(f"mkdir -p {data_dir}")
 
-    data_dir = data_args.train_data.replace("train.txt", "")
+    shutil.copy(data_args.train_data, data_dir)
+    print(f"train file copied to: {data_dir}")
+    shutil.copy(data_args.test_data, data_dir)
+    print(f"test file copied to: {data_dir}")
+    shutil.copy(data_args.data_labels, data_dir)
+    print(f"labels file copied to: {data_dir}")
 
     # Get datasets
     train_dataset = (
