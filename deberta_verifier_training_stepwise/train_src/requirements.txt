@@ -1,0 +1,15 @@
+wandb==0.12.7
+future
+numpy==1.20.3
+transformers==4.6.0
+datasets==1.11.0
+huggingface-hub==0.0.8
+nltk
+rouge-score
+sacrebleu==1.5.1
+sentencepiece
+sklearn
+deepspeed
+seqeval
+conllu
+multiset
