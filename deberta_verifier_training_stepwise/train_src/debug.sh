@@ -23,7 +23,6 @@ python -m torch.distributed.launch --nproc_per_node=1 --master_port=29501 run_ne
 --learning_rate 1e-5 \
 --lr_scheduler_type constant \
 --seed 1 \
---do_train \
 --do_eval \
 --logging_steps 10 \
 --overwrite_output_dir \

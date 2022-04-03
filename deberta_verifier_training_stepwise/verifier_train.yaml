@@ -81,9 +81,7 @@ successful_return_code: Zero
 meta:
   requireGpu: True
 command: >-
-  python -m torch.distributed.launch run_ner.py
-  --master_port 29501
-  --nproc_per_node 8
+  python -m torch.distributed.launch --master_port 29501 --nproc_per_node 8 run_ner.py
   --task_type NER
   --train_data ${{inputs.train_data}}
   --test_data ${{inputs.test_data}}
