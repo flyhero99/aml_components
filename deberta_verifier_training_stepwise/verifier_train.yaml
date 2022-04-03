@@ -1,23 +1,27 @@
 name: Verifier_Train
 display_name: Verifier Train
-version: 0.0.1
+version: 0.0.3
 type: command
 description: Verifier Train
 tags: {category: Verifier Training, contact: v-yifeili@microsoft.com}
 inputs:
-  training_data_dir:
+  train_data:
     type: path
-    description: Training data organized in {train.txt, dev.txt, [test.txt] and label.txt}
-  training_data_labels_dir:
+    description: train.txt
+  test_data:
     type: path
-    description: The directory of labels.txt
+    description: test.txt
+  data_labels:
+    type: path
+    description: labels.txt
+  previous_run_dir:
+    type: path
+    description: previous_run_dir
+    optional: true
   model_name_or_path:
-    type: path
+    type: string
     description: model_name_or_path
     default: microsoft/deberta-v3-large
-  output_dir:
-    type: path
-    description: output_dir
   save_strategy:
     type: string
     desacription: save_strategy
