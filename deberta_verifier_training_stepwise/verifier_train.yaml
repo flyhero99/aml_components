@@ -5,6 +5,10 @@ type: command
 description: Verifier Train
 tags: {category: Verifier Training, contact: v-yifeili@microsoft.com}
 inputs:
+  wandb_run_name:
+    type: string
+    description: A friendly displayed name on wandb.ai for this run
+    default: deberta-verifier-stepwise-loss_weight_1_1_0.1_0.1-5epochs-0epochs
   train_data:
     type: path
     description: train.txt
@@ -83,6 +87,8 @@ meta:
 command: >-
   export WANDB_API_KEY=a93b113948cc3c5c4c22f277d57ffcfd2366d270 &&
   export WANDB_PROJECT=deberta-verifier &&
+  export WANDB_RUN_ID=${{inputs.wandb_run_name}} &&
+  export WANDB_TAGS=deberta_verifier &&
   pip install -r requirements.txt &&
   python -m torch.distributed.launch
   --master_port 29501
