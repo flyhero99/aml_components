@@ -13,3 +13,4 @@ deepspeed
 seqeval
 conllu
 multiset
+azureml-sdk
