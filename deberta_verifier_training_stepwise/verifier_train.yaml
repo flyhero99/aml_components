@@ -1,6 +1,6 @@
 name: Verifier_Train
 display_name: Verifier Train
-version: 0.0.12
+version: 0.0.13
 type: command
 description: Verifier Train
 tags: {category: Verifier Training, contact: v-yifeili@microsoft.com}
@@ -41,7 +41,7 @@ inputs:
   per_device_batch_size:
     type: integer
     description: per_device_batch_size
-    default: 16
+    default: 8
   seed:
     type: integer
     description: Random seed, default is 1
@@ -111,6 +111,7 @@ command: >-
   --save_strategy ${{inputs.save_strategy}}
   --evaluation_strategy ${{inputs.evaluation_strategy}}
   --learning_rate ${{inputs.learning_rate}}
+  --lr_scheduler_type constant
   --seed ${{inputs.seed}}
   --do_train ${{inputs.do_train}}
   --do_eval ${{inputs.do_eval}}
