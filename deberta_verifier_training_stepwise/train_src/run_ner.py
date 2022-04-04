@@ -78,6 +78,9 @@ class ModelArguments:
     previous_run_dir: Optional[str] = field(
         default=None, metadata={"help": "Path to pretrained model or model identifier from huggingface.co/models"}
     )
+    previous_run_epoch: Optional[int] = field(
+        default=1, metadata={"help": "Path to pretrained model or model identifier from huggingface.co/models"}
+    )
     config_name: Optional[str] = field(
         default=None, metadata={"help": "Pretrained config name or path if not the same as model_name"}
     )
@@ -214,7 +217,11 @@ def main():
     # download model & vocab.
 
     if model_args.previous_run_dir is not None:
-        model_args.model_name_or_path = model_args.previous_run_dir
+        pdb.set_trace()
+        ckpt_path_list = [x for x in os.listdir(model_args.previous_run_dir) if "checkpoint" in x]
+        ckpt_path_list = sorted(ckpt_path_list, key=lambda x : int(x.split("-")[1]))
+        load_model_dir = ckpt_path_list[model_args.previous_run_epoch - 1]  # index starts from 0
+        model_args.model_name_or_path = os.path.join(model_args.previous_run_dir, load_model_dir)
 
     config = AutoConfig.from_pretrained(
         model_args.config_name if model_args.config_name else model_args.model_name_or_path,
