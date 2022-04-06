@@ -266,7 +266,7 @@ if is_torch_available():
                         pad_token_segment_id=tokenizer.pad_token_type_id,
                         pad_token_label_id=self.pad_token_label_id,
                     )
-                    logger.info(f"Saving features into cached file {cached_features_file}")
+                    # logger.info(f"Saving features into cached file {cached_features_file}")
                     # torch.save(self.features, cached_features_file)
 
         def __len__(self):

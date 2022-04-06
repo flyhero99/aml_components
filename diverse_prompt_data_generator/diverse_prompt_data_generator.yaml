@@ -19,7 +19,7 @@ inputs:
     default: 8
   num_of_prompts_for_one_case:
     type: integer
-    description: The number of examples for one case, default is 20
+    description: The number of examples for one case, default is 20 (change it to 100 when generating test data)
     default: 20
   num_of_total_examples:
     type: integer
