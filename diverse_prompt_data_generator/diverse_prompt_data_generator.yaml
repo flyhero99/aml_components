@@ -1,0 +1,70 @@
+name: Diverse_Prompt_Data_Generator
+display_name: Diverse Prompt Data Generator
+version: 0.0.1
+type: command
+description: Diverse Prompt Data Generator
+tags: {category: Diverse Prompt Data Generator, contact: v-yifeili@microsoft.com}
+inputs:
+  input_file:
+    type: string
+    optional: false
+    description: The file path of the output
+  tokenizer_name_or_path:
+    type: string
+    description: The name of tokenizer, default is "gpt-2"
+    default: gpt-2
+  num_of_examples_in_one_prompt:
+    type: integer
+    description: The number of examples in one prompt, default is 8
+    default: 8
+  num_of_prompts_for_one_case:
+    type: integer
+    description: The number of examples for one case, default is 20
+    default: 20
+  num_of_total_examples:
+    type: integer
+    description: The number of examples for one case, default is 1000 (can be set to inf with -1)
+    default: 1000
+  random_seed:
+    type: integer
+    description: The random seed when randomly selecting prompts and total examples, default is 233
+    default: 233
+  tokenizer_max_length:
+    type: integer
+    description: The maximum length of a tokenized sequence. Default is 1800.
+    default: 1800
+  raw_json_data_input_key:
+    type: string
+    description: The keyword of input (like "input"), default is "question" as for GSM8K.
+    default: question
+  raw_json_data_output_key:
+    type: string
+    description: The keyword of output (like "output"), default is "answer" as for GSM8K.
+    default: answer
+outputs:
+  output_file:
+    type: path
+    optional: false
+    description: The file path of the output
+code:
+  local_path: ./src
+environment:
+  docker:
+    image: pytorch/pytorch:1.6.0-cuda10.1-cudnn7-devel
+  os: Linux
+successful_return_code: Zero
+meta:
+  requireGpu: False
+command: >-
+  pip install -r requirements.txt &&
+  python diverse_prompt_data_generator.py
+  --input_file ${{inputs.input_file}}
+  --output_file ${{outputs.output_file}}
+  --tokenizer_name_or_path ${{inputs.tokenizer_name_or_path}}
+  --num_of_examples_in_one_prompt ${{inputs.num_of_examples_in_one_prompt}}
+  --num_of_prompts_for_one_case ${{inputs.num_of_total_examples}}
+  --num_of_total_examples ${{inputs.num_of_total_examples}}
+  --random_seed ${{inputs.random_seed}}
+  --tokenizer_max_length ${{inputs.tokenizer_max_length}}
+  --raw_json_data_input_key ${{inputs.raw_json_data_input_key}}
+  --raw_json_data_output_key ${{inputs.raw_json_data_output_key}}
