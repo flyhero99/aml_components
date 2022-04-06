@@ -59,11 +59,13 @@ def convert_eval_sequences_to_gsm8k_cases(eval_sequences):
     cases = []
     for i in range(0, len(eval_sequences), 101):
         case = GSM8KCase("", [])
-        question, grount_truth = eval_sequences[i].split("&&")[0], eval_sequences[i].split("&&")[1]
+        # question, grount_truth = eval_sequences[i].split("&&")[0].strip(), eval_sequences[i].split("&&")[1].strip()
+        question, grount_truth = eval_sequences[i].split("&&")[1].strip(), eval_sequences[i].split("&&")[0].strip()
         case.ground_truth = GSM8KExample(grount_truth)
         case.question = question
         for j in range(i+1, i+101):
-            case.preds.append(GSM8KExample(eval_sequences[j].split("&&")[1]))
+            # case.preds.append(GSM8KExample(eval_sequences[j].split("&&")[1]))
+            case.preds.append(GSM8KExample(eval_sequences[j].split("&&")[0]))
         cases.append(case)
     return cases
 
