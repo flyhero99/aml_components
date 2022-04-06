@@ -17,7 +17,7 @@ python -m torch.distributed.launch --nproc_per_node=1 --master_port=29501 run_ne
 --max_seq_length 512 \
 --num_train_epochs 10 \
 --per_device_train_batch_size 16 \
---per_device_eval_batch_size 256 \
+--per_device_eval_batch_size 400 \
 --save_strategy epoch \
 --evaluation_strategy epoch \
 --learning_rate 1e-5 \
