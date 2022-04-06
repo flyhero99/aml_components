@@ -45,7 +45,7 @@ def get_sequence_labels(question, pred):
 if __name__ == '__main__':
     print("Hello world!")
     parser = argparse.ArgumentParser()
-    parser.add_argument("--generator_output_file", type=str, default=None, help="generator output file in .jsonl format")
+    parser.add_argument("--generator_result_file", type=str, default=None, help="generator output file in .jsonl format")
     parser.add_argument("--diverse_prompt_data_file", type=str, default=None, help="diverse_prompt_data_file")
     parser.add_argument("--output_file", type=str, default=None, help="output file in .jsonl format")
     parser.add_argument("--random_seed", type=int, default=233, help="random_seed")
@@ -55,7 +55,7 @@ if __name__ == '__main__':
     random.seed(args.random_seed)
 
     # loading data from file
-    generator_outputs = [json.loads(line) for line in open(args.generator_output_file)]
+    generator_outputs = [json.loads(line) for line in open(args.generator_result_file)]
     diverse_prompt_data = [json.loads(line) for line in open(args.diverse_prompt_data_file)]
     generator_outputs_dict = {x["context"]: x for x in generator_outputs}
     diverse_prompt_data_dict = {x["context"]: x for x in diverse_prompt_data}
