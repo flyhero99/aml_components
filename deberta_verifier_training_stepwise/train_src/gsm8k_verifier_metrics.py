@@ -7,12 +7,14 @@ import datasets
 import pdb
 import numpy as np
 import scipy
+from tqdm import tqdm
 
 from gsm8k_utils import (
     GSM8KCase,
     GSM8KExample,
     convert_eval_sequences_to_gsm8k_cases,
     compute_results,
+    compute_results_avg,
 )
 
 _CITATION = ""
@@ -36,22 +38,27 @@ class GSM8KVerifierMetrics(datasets.Metric):
         super().__init__(**kwargs)
         self.label2id = label2id
         self.cases = convert_eval_sequences_to_gsm8k_cases(eval_sequences)
-        # pdb.set_trace()
     
     def assign_scores(self, predictions):
-        # pdb.set_trace()
         for i in range(0, len(predictions), 101):
             self.cases[i//101].ground_truth.verifier_score = predictions[i]
-            # print("i//101:", i//101)
             for j in range(0, 100):
-                # print("i//101:", i//101, "j+1:", j+1, "i+j+1:", i+j+1)
                 self.cases[i//101].preds[j].verifier_score = predictions[i+j+1]
-    
+
     def _compute(self, predictions=None, references=None):
-        # pdb.set_trace()
         self.assign_scores(predictions)
-        return compute_results(self.cases)
-    
+        result = {}
+        result.update(compute_results_avg(self.cases, rand_k=100, repeat_time=10))
+        result.update(compute_results_avg(self.cases, rand_k=75, repeat_time=10))
+        result.update(compute_results_avg(self.cases, rand_k=50, repeat_time=10))
+        result.update(compute_results_avg(self.cases, rand_k=25, repeat_time=10))
+        result.update(compute_results_avg(self.cases, rand_k=20, repeat_time=10))
+        result.update(compute_results_avg(self.cases, rand_k=10, repeat_time=10))
+        result.update(compute_results_avg(self.cases, rand_k=5, repeat_time=10))
+        result.update(compute_results_avg(self.cases, rand_k=2, repeat_time=10))
+        return result
+        # return compute_results(self.cases)
+
     def _info(self):
         return datasets.MetricInfo(
             description=_DESCRIPTION,

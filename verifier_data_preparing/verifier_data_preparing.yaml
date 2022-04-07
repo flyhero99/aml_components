@@ -39,7 +39,7 @@ command: >-
   pip install -r requirements.txt &&
   python verifier_data_preparing.py
   --generator_result_file ${{inputs.generator_result_file}}
-  --generator_result_file ${{inputs.generator_result_file}}
+  --diverse_prompt_data_file ${{inputs.diverse_prompt_data_file}}
   --output_file ${{outputs.output_file}}
   --split ${{inputs.split}}
   --random_seed ${{inputs.random_seed}}

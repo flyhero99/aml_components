@@ -6,6 +6,7 @@ from transformers import AutoTokenizer
 from multiset import Multiset
 from functools import lru_cache
 import random
+import pdb
 
 
 class GSM8KCase:
@@ -59,8 +60,8 @@ def convert_eval_sequences_to_gsm8k_cases(eval_sequences):
     cases = []
     for i in range(0, len(eval_sequences), 101):
         case = GSM8KCase("", [])
-        # question, grount_truth = eval_sequences[i].split("&&")[0].strip(), eval_sequences[i].split("&&")[1].strip()
-        question, grount_truth = eval_sequences[i].split("&&")[1].strip(), eval_sequences[i].split("&&")[0].strip()
+        # question, grount_truth = eval_sequences[i].split("&&")[0], eval_sequences[i].split("&&")[1]
+        question, grount_truth = eval_sequences[i].split("&&")[1], eval_sequences[i].split("&&")[0]
         case.ground_truth = GSM8KExample(grount_truth)
         case.question = question
         for j in range(i+1, i+101):
@@ -76,11 +77,13 @@ def random_1_hit(gt_ans, preds):
     pred0_ans = preds[idx].get_final_answer()
     return 1 if pred0_ans == gt_ans else 0
 
+
 def recall_hit(gt_ans, preds):
     for pred in preds:
         if pred.get_final_answer() == gt_ans:
             return 1
     return 0
+
 
 def voting_hit(gt_ans, preds):
     # voting acc
@@ -96,6 +99,7 @@ def voting_hit(gt_ans, preds):
             return 1 if ans == gt_ans else 0
     return 0
 
+
 def weighted_voting_hit(gt_ans, preds):
     # voting acc
     answers = {}
@@ -110,6 +114,7 @@ def weighted_voting_hit(gt_ans, preds):
             return 1 if ans == gt_ans else 0
     return 0
 
+
 def verification_hit(gt_ans, preds):
     preds = sorted(preds, key=lambda x : x.verifier_score, reverse=True)
     for pred in preds:
@@ -120,7 +125,6 @@ def verification_hit(gt_ans, preds):
 
 
 def compute_results(data, rand_k=100):
-    # total_cnt = 0
     total_random_hit_cnt = 0
     total_recall_cnt = 0
     total_vote_cnt = 0
@@ -135,31 +139,32 @@ def compute_results(data, rand_k=100):
         total_recall_cnt += recall_hit(gt_ans, slice)
         total_weighted_vote_cnt += weighted_voting_hit(gt_ans, slice)
         total_verification_cnt += verification_hit(gt_ans, slice)
-        
-    return {
+    result = {
         "random_top1": total_random_hit_cnt / len(data), 
         "recall": total_recall_cnt / len(data),
-        "verifier_top1_accuracy": total_verification_cnt / len(data),
-        "voting_top1_accuracy": total_vote_cnt / len(data),
-        "weighted_voting_top1_accuracy": total_weighted_vote_cnt / len(data),
+        f"verifier_top1_accuracy@{rand_k}": total_verification_cnt / len(data),
+        f"voting_top1_accuracy@{rand_k}": total_vote_cnt / len(data),
+        f"weighted_voting_top1_accuracy@{rand_k}": total_weighted_vote_cnt / len(data),
     }
+    return result
 
 
-# def compute_metrics_avg(data, rand_k=100, repeat_time=1):
-#     sum_result_dict = {
-#         "total_random_hit_cnt": 0, 
-#         "total_recall_cnt": 0,
-#         "total_vote_cnt": 0,
-#         "total_weighted_vote_cnt": 0,
-#         "total_verification_cnt": 0,
-#     }
-#     for i in tqdm(range(repeat_time)):
-#         for k in sum_result_dict:
-#             result_dict = compute_metrics(data, rand_k=rand_k)
-#             sum_result_dict[k] += result_dict[k]
-#     for k in sum_result_dict:
-#         sum_result_dict[k] = sum_result_dict[k] / repeat_time if repeat_time != 1 else sum_result_dict[k]
-#     return sum_result_dict
+def compute_results_avg(data, rand_k=100, repeat_time=5):
+    sum_result_dict = {
+        "random_top1": 0, 
+        "recall": 0,
+        f"verifier_top1_accuracy@{rand_k}": 0,
+        f"voting_top1_accuracy@{rand_k}": 0,
+        f"weighted_voting_top1_accuracy@{rand_k}": 0,
+    }
+    for i in tqdm(range(repeat_time)):
+        for k in sum_result_dict:
+            result_dict = compute_results(data, rand_k=rand_k)
+            sum_result_dict[k] += result_dict[k]
+    for k in sum_result_dict:
+        sum_result_dict[k] = sum_result_dict[k] / repeat_time if repeat_time != 1 else sum_result_dict[k]
+        sum_result_dict[k] = round(sum_result_dict[k], 8)
+    return sum_result_dict
 
 
 @lru_cache(maxsize=4096)

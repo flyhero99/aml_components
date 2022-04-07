@@ -7,7 +7,7 @@ export NUM_EPOCHS=16
 export SAVE_STEPS=10000
 export SEED=1
 
-python -m torch.distributed.launch --nproc_per_node=1 --master_port=29501 run_ner.py \
+python -B -m torch.distributed.launch --nproc_per_node=1 --master_port=23333 run_ner.py \
 --task_type NER \
 --train_data /home/v-yifeili/blob/dkibdm/aml_components/deberta_verifier_training_stepwise/data_new/train.txt \
 --test_data /home/v-yifeili/blob/dkibdm/aml_components/deberta_verifier_training_stepwise/data_new/dev.txt \

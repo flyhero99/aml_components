@@ -4,6 +4,13 @@ data/
 
 data_new/
 
+data_for_debug/
+
+data_reverse_all/
+
 wandb/
 
 debug.sh
+
+*.out
+
