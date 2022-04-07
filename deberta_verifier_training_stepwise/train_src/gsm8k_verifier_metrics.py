@@ -42,8 +42,10 @@ class GSM8KVerifierMetrics(datasets.Metric):
         # pdb.set_trace()
         for i in range(0, len(predictions), 101):
             self.cases[i//101].ground_truth.verifier_score = predictions[i]
+            # print("i//101:", i//101)
             for j in range(0, 100):
-                self.cases[i//101].preds[j].verifier_score = predictions[j+1]
+                # print("i//101:", i//101, "j+1:", j+1, "i+j+1:", i+j+1)
+                self.cases[i//101].preds[j].verifier_score = predictions[i+j+1]
     
     def _compute(self, predictions=None, references=None):
         # pdb.set_trace()

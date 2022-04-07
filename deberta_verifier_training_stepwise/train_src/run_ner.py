@@ -235,6 +235,7 @@ def main():
         cache_dir=model_args.cache_dir,
     )
     
+    # data_dir = data_args.train_data.replace("train.txt", "")  # for debug use
     data_dir = os.path.join(training_args.output_dir, "data/")
     print("[data_dir]:", data_dir)
     os.system(f"mkdir -p {data_dir}")
@@ -300,6 +301,7 @@ def main():
         for i in range(predictions.shape[0]):
             solution_correct_index = config.label2id["SOLUTION-CORRECT"]
             score = scipy.special.softmax(predictions[i][1])[solution_correct_index].item()
+
             scores.append(score)
         return scores
 
